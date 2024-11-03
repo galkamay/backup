@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gal-alon-nginx-deployment
+  namespace: app-ga
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        role: app  # Ensures this pod only runs on nodes labeled with role=app
+      containers:
+      - name: nginx
+        image: 992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:nginx-image-latest
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: nginx-config
+            mountPath: /etc/nginx/nginx.conf  # Path in the container
+            subPath: nginx.conf
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config

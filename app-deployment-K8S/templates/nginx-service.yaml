@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gal-alon-nginx-service
+  namespace: app-ga  # Make sure the service is in the same namespace
+  labels:
+    app: nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx  # This selector matches the labels in the deployment
+  ports:
+    - port: 80
+      targetPort: 80  # This should match the containerPort in your deployment

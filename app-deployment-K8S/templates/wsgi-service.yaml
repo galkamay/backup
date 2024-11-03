@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gal-alon-django-service
+  namespace: app-ga  # Specify the namespace
+  labels:
+    app: my-app  # Updated to match the Deployment and ServiceMonitor
+spec:
+  type: ClusterIP
+  selector:
+    app: my-app  # Updated to match the Deployment
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+    - name: metrics  # Expose metrics port for Prometheus
+      port: 9100
+      targetPort: 9100

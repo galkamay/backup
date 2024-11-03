@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s  # Default scrape interval
+
+scrape_configs:
+  # Existing scrape configurations can go here
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+
+  # Add your additional scrape config for the NGINX exporter
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets: ['nginx-prometheus-exporter.monitoring.svc.cluster.local:9113']
