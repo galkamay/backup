@@ -1,0 +1,17 @@
+# Base image
+FROM nginx:latest
+
+# Create application directory for static files in the container
+RUN mkdir -p /opt/status-page/statuspage/static/
+
+# Create the sites-enabled directory
+RUN mkdir -p /etc/nginx/sites-enabled
+
+# Copy custom Nginx configuration file to the container
+COPY ./status-page.conf /etc/nginx/sites-available/status-page.conf
+
+# Symlink the config file to sites-enabled to activate it
+RUN ln -s /etc/nginx/sites-available/status-page.conf /etc/nginx/sites-enabled/status-page.conf
+
+# Copy static files from local directory to the container
+COPY ./statuspage/static/ /opt/status-page/statuspage/static/
