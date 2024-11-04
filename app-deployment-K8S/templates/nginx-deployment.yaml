@@ -16,7 +16,7 @@ spec:
         app: nginx
     spec:
       nodeSelector:
-        role: app  # Ensures this pod only runs on nodes labeled with role=app
+        nodegroup: app  # Ensures this pod only runs on nodes labeled with role=app
       containers:
       - name: nginx
         image: 992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:nginx-image-latest

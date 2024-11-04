@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gal-alon-django-deployment
+  name: gal-alon-wsgi-deployment
   namespace: app-ga  # Specify the namespace
   labels:
     app: my-app
@@ -16,9 +16,9 @@ spec:
         app: my-app  # Match label with Service and ServiceMonitor
     spec:
       nodeSelector:
-        role: app  # Ensures this pod only runs on nodes labeled with role=app
+        nodegroup: app  # Ensures this pod only runs on nodes labeled with role=app
       containers:
-      - name: django
+      - name: wsgi
         image: 992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:django-image-latest
         imagePullPolicy: Always
         ports:
