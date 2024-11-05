@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gal-alon-app-ingress  # Name of the Ingress resource
+  namespace: app-ga  # Namespace in which the Ingress resides
+  annotations:
+    kubernetes.io/ingress.class: "alb"  # Use Application Load Balancer (ALB)
+    alb.ingress.kubernetes.io/scheme: internet-facing  # ALB will be accessible from the internet
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:992382545251:certificate/7742499e-92c1-4cd2-8a3f-3533987894e8  # ARN of the SSL certificate
+    alb.ingress.kubernetes.io/load-balancer-name: "alon-gal-app-lb"  # Load Balancer name (should be lowercase if needed)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'  # Ports the ALB will listen on
+    alb.ingress.kubernetes.io/target-type: ip  # Target type is IP
+spec:
+  rules:
+    - host: statuspage.gal-kamay.com  # Host for the Ingress
+      http:
+        paths:
+          - path: /  # Path that matches all requests to the root
+            pathType: Prefix  # Type of path matching (Prefix means it matches any path starting with /)
+            backend:
+              service:
+                name: gal-alon-nginx-service  # Name of the backend service to route requests to
+                port:
+                  number: 80  # Port number of the backend service

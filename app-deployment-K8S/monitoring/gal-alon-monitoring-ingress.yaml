@@ -1,0 +1,61 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gal-alon-app-ingress
+  namespace: app-ga
+  annotations:
+    kubernetes.io/ingress.class: "alb"  # Use Application Load Balancer (ALB)
+    alb.ingress.kubernetes.io/scheme: internet-facing  # ALB will be internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:992382545251:certificate/7742499e-92c1-4cd2-8a3f-3533987894e8  # ARN of the SSL certificate
+    alb.ingress.kubernetes.io/load-balancer-name: "alon-gal-app-lb"  # Load Balancer name (change to lowercase if needed)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'  # Ports to listen on
+    alb.ingress.kubernetes.io/target-type: ip  # Target type is IP
+spec:
+  rules:
+    - host: statuspage.gal-kamay.com  # Host for the Ingress
+      http:
+        paths:
+          - path: /  # Path that matches all requests
+            pathType: Prefix  # Path type (Prefix = matches all paths starting with /)
+            backend:
+              service:
+                name: gal-alon-nginx-service  # Name of the service to route to
+                port:
+                  number: 80  # Port number of the service
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gal-alon-monitoring-ingress
+  namespace: app-ga
+  annotations:
+    kubernetes.io/ingress.class: "alb"  # Use ALB
+    alb.ingress.kubernetes.io/scheme: internet-facing  # ALB will be internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:992382545251:certificate/7742499e-92c1-4cd2-8a3f-3533987894e8  # ARN of the SSL certificate
+    alb.ingress.kubernetes.io/load-balancer-name: "alon-gal-monitoring-lb"  # Load Balancer name for monitoring
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'  # Ports to listen on
+    alb.ingress.kubernetes.io/target-type: ip  # Target type is IP
+spec:
+  rules:
+    - host: prometheus.gal-kamay.com  # Host for Prometheus (restrict access using WAF)
+      http:
+        paths:
+          - path: /  # Path that matches all requests
+            pathType: Prefix  # Path type
+            backend:
+              service:
+                name: prometheus-kube-prometheus-prometheus  # Name of the service to route to
+                port:
+                  number: 9090  # Port number of the service
+
+    - host: grafana.gal-kamay.com  # Host for Grafana (restrict access using WAF)
+      http:
+        paths:
+          - path: /  # Path that matches all requests
+            pathType: Prefix  # Path type
+            backend:
+              service:
+                name: prometheus-grafana  # Name of the service to route to
+                port:
+                  number: 80  # Port number of the service
