@@ -1,0 +1,54 @@
+pipeline {
+    agent { label 'docker' }
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_DJANGO_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:django-image-latest'
+        ECR_NGINX_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:nginx-image-latest'
+        AWS_CREDENTIALS_ID = 'aws-access-key-jenkins'
+        KUBERNETES_NAMESPACE = 'app-ga'
+    }
+
+    stages {
+        stage('Deploy Django to EKS') {
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                        sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
+                        sh "kubectl set image deployment/django django=$ECR_DJANGO_REPO:latest -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl rollout restart deployment/django -n $KUBERNETES_NAMESPACE"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Nginx to EKS') {
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                        sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
+                        sh "kubectl set image deployment/nginx nginx=$ECR_NGINX_REPO:latest -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl rollout restart deployment/nginx -n $KUBERNETES_NAMESPACE"
+                    }
+                }
+            }
+        }
+
+        stage('Deployment Validation') {
+            steps {
+                script {
+                    sh 'kubectl rollout status deployment/django -n $KUBERNETES_NAMESPACE'
+                    sh 'kubectl rollout status deployment/nginx -n $KUBERNETES_NAMESPACE'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CD pipeline completed successfully!'
+        }
+        failure {
+            echo 'CD pipeline failed.'
+        }
+    }
+}
