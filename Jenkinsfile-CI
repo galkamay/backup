@@ -50,7 +50,7 @@ pipeline {
                         sh 'docker push $ECR_NGINX_REPO'
 
                         // Scan the image with Trivy using the local cache
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy $ECR_NGINX_REPO:latest'
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy $ECR_DJANGO_REPO'
                     }
                 }
             }
