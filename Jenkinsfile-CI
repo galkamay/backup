@@ -12,21 +12,21 @@ pipeline {
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                        // התחברות ל-ECR
+                        // Log in to ECR
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_DJANGO_REPO'
 
-                        // העתקת Dockerfile-django לתיקיית Status-Page כ-Dockerfile
+                        // Copy Dockerfile-django to Status-Page folder as Dockerfile
                         sh 'cp ./Docker-Files/Dockerfile-django ./Status-Page/Dockerfile'
 
-                        // בניית אימג' Django
+                        // Build Django image
                         sh 'cd ./Status-Page && docker build -t django-app:latest .'
 
-                        // דחיפת האימג' ל-ECR
+                        // Push Django image to ECR
                         sh 'docker tag django-app:latest $ECR_DJANGO_REPO'
                         sh 'docker push $ECR_DJANGO_REPO'
 
-                        // סריקה של האימג' עם כלי אבטחה (למשל Trivy)
-                        sh 'trivy image --severity HIGH,CRITICAL $ECR_DJANGO_REPO:latest'
+                        // Scan the image with Trivy using the local database
+                        sh 'trivy image --severity HIGH,CRITICAL --offline --cache-dir /var/lib/trivy $ECR_DJANGO_REPO:latest'
                     }
                 }
             }
@@ -36,21 +36,21 @@ pipeline {
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                        // התחברות ל-ECR
+                        // Log in to ECR
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_NGINX_REPO'
 
-                        // העתקת Dockerfile-nginx לתיקיית Status-Page כ-Dockerfile
+                        // Copy Dockerfile-nginx to Status-Page folder as Dockerfile
                         sh 'cp ./Docker-Files/Dockerfile-nginx ./Status-Page/Dockerfile'
 
-                        // בניית אימג' Nginx
+                        // Build Nginx image
                         sh 'cd ./Status-Page && docker build -t nginx-app:latest .'
 
-                        // דחיפת האימג' ל-ECR
+                        // Push Nginx image to ECR
                         sh 'docker tag nginx-app:latest $ECR_NGINX_REPO'
                         sh 'docker push $ECR_NGINX_REPO'
 
-                        // סריקה של האימג' עם כלי אבטחה
-                        sh 'trivy image --severity HIGH,CRITICAL $ECR_NGINX_REPO:latest'
+                        // Scan the image with Trivy using the local database
+                        sh 'trivy image --severity HIGH,CRITICAL --offline --cache-dir /var/lib/trivy $ECR_NGINX_REPO:latest'
                     }
                 }
             }
@@ -59,7 +59,7 @@ pipeline {
         stage('Remove All Docker Images') {
             steps {
                 script {
-                    // הסרת כל האימג'ים המקומיים כדי לפנות מקום
+                    // Remove all local Docker images to free up space
                     sh '''
                         images=$(docker images -q)
                         if [ -n "$images" ]; then
