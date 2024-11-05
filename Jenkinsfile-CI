@@ -19,7 +19,7 @@ pipeline {
                         sh 'cp ./Docker-Files/Dockerfile-django ./Status-Page/Dockerfile'
 
                         // בניית אימג' Django
-                        sh 'cd ./Status-Page && docker build -t django-app:latest .'
+                        sh 'cd ./Status-Page && docker build --platform linux/amd64 -t django-app:latest .'
 
                         // דחיפת האימג' ל-ECR
                         sh 'docker tag django-app:latest $ECR_DJANGO_REPO'
@@ -43,7 +43,7 @@ pipeline {
                         sh 'cp ./Docker-Files/Dockerfile-nginx ./Status-Page/Dockerfile'
 
                         // בניית אימג' Nginx
-                        sh 'cd ./Status-Page && docker build -t nginx-app:latest .'
+                        sh 'cd ./Status-Page && docker build --platform linux/amd64 -t nginx-app:latest .'
 
                         // דחיפת האימג' ל-ECR
                         sh 'docker tag nginx-app:latest $ECR_NGINX_REPO'
