@@ -14,8 +14,8 @@ pipeline {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
                         sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
-                        sh "kubectl set image deployment/django django=$ECR_DJANGO_REPO:latest -n $KUBERNETES_NAMESPACE"
-                        sh "kubectl rollout restart deployment/django -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl set image deployment/gal-alon-wsgi-deployment wsgi=$ECR_DJANGO_REPO -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl rollout restart deployment/gal-alon-wsgi-deployment -n $KUBERNETES_NAMESPACE"
                     }
                 }
             }
@@ -26,8 +26,8 @@ pipeline {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
                         sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
-                        sh "kubectl set image deployment/nginx nginx=$ECR_NGINX_REPO:latest -n $KUBERNETES_NAMESPACE"
-                        sh "kubectl rollout restart deployment/nginx -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl set image deployment/gal-alon-nginx-deployment nginx=$ECR_NGINX_REPO -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl rollout restart deployment/gal-alon-nginx-deployment -n $KUBERNETES_NAMESPACE"
                     }
                 }
             }
@@ -36,8 +36,8 @@ pipeline {
         stage('Deployment Validation') {
             steps {
                 script {
-                    sh 'kubectl rollout status deployment/django -n $KUBERNETES_NAMESPACE'
-                    sh 'kubectl rollout status deployment/nginx -n $KUBERNETES_NAMESPACE'
+                    sh "kubectl rollout status deployment/gal-alon-wsgi-deployment -n $KUBERNETES_NAMESPACE"
+                    sh "kubectl rollout status deployment/gal-alon-nginx-deployment -n $KUBERNETES_NAMESPACE"
                 }
             }
         }
