@@ -28,7 +28,7 @@ pipeline {
                         sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
 
                         // יצירת ConfigMap ל-Nginx מהקובץ nginx.conf
-                        sh "kubectl create configmap nginx-config --from-file=nginx.conf -n $KUBERNETES_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -"
+                        sh "kubectl create configmap nginx-config --from-file=./app-deployment-K8S/nginx.conf -n $KUBERNETES_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -"
 
                         sh "kubectl set image deployment/gal-alon-nginx-deployment nginx=$ECR_NGINX_REPO -n $KUBERNETES_NAMESPACE"
                         sh "kubectl rollout restart deployment/gal-alon-nginx-deployment -n $KUBERNETES_NAMESPACE"
