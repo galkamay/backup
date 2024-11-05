@@ -12,15 +12,20 @@ pipeline {
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                        // Login to ECR
+                        // התחברות ל-ECR
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_DJANGO_REPO'
 
-                        // Build the Django image
-                        sh 'docker build -t django-app:latest ./Status-Page'
+                        // העתקת Dockerfile-django לתיקיית Status-Page כ-Dockerfile
+                        sh 'cp ./Docker-Files/Dockerfile-django ./Status-Page/Dockerfile'
+
+                        // בניית אימג' Django
+                        sh 'cd ./Status-Page && docker build -t django-app:latest .'
+
+                        // דחיפת האימג' ל-ECR
                         sh 'docker tag django-app:latest $ECR_DJANGO_REPO'
                         sh 'docker push $ECR_DJANGO_REPO'
 
-                        // Security scan
+                        // סריקה של האימג' עם כלי אבטחה (למשל Trivy)
                         sh 'trivy image --severity HIGH,CRITICAL $ECR_DJANGO_REPO:latest'
                     }
                 }
@@ -31,17 +36,38 @@ pipeline {
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                        // Login to ECR
+                        // התחברות ל-ECR
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_NGINX_REPO'
 
-                        // Build the Nginx image
-                        sh 'docker build -t nginx-app:latest ./Status-Page'
+                        // העתקת Dockerfile-nginx לתיקיית Status-Page כ-Dockerfile
+                        sh 'cp ./Docker-Files/Dockerfile-nginx ./Status-Page/Dockerfile'
+
+                        // בניית אימג' Nginx
+                        sh 'cd ./Status-Page && docker build -t nginx-app:latest .'
+
+                        // דחיפת האימג' ל-ECR
                         sh 'docker tag nginx-app:latest $ECR_NGINX_REPO'
                         sh 'docker push $ECR_NGINX_REPO'
 
-                        // Security scan
+                        // סריקה של האימג' עם כלי אבטחה
                         sh 'trivy image --severity HIGH,CRITICAL $ECR_NGINX_REPO:latest'
                     }
+                }
+            }
+        }
+
+        stage('Remove All Docker Images') {
+            steps {
+                script {
+                    // הסרת כל האימג'ים המקומיים כדי לפנות מקום
+                    sh '''
+                        images=$(docker images -q)
+                        if [ -n "$images" ]; then
+                            docker rmi -f $images
+                        else
+                            echo "No images to delete"
+                        fi
+                    '''
                 }
             }
         }
