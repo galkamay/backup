@@ -19,12 +19,12 @@ RUN apt-get update && \
 # Set permissions for the application directory
 RUN chown -R status-page:status-page /opt/status-page && chmod -R 755 /opt/status-page
 
-# Create and activate virtual environment without symlinks, install dependencies as root
-RUN python3 -m venv --without-pip venv && \
-    curl https://bootstrap.pypa.io/get-pip.py | ./venv/bin/python && \
-    PATH="/opt/status-page/venv/bin:$PATH" && \
-    ./venv/bin/pip install --upgrade pip && \
-    ./venv/bin/pip install -r requirements.txt
+# Create and activate virtual environment, install pip, and dependencies
+RUN python3 -m venv venv && \
+    . venv/bin/activate && \
+    curl https://bootstrap.pypa.io/get-pip.py | python3 && \
+    venv/bin/pip install --upgrade pip && \
+    venv/bin/pip install -r requirements.txt
 
 # Switch back to status-page user for security
 USER status-page
