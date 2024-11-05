@@ -18,7 +18,7 @@ pipeline {
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t django-app:$IMAGE_VERSION .'
                         sh 'docker tag django-app:$IMAGE_VERSION $ECR_DJANGO_REPO:django-image-latest'
                         sh 'docker push $ECR_DJANGO_REPO:django-image-latest'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_DJANGO_REPO:django-image-latest'
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m $ECR_DJANGO_REPO:django-image-latest'
                     }
                 }
             }
@@ -33,7 +33,7 @@ pipeline {
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t nginx-app:$IMAGE_VERSION .'
                         sh 'docker tag nginx-app:$IMAGE_VERSION $ECR_NGINX_REPO:nginx-image-latest'
                         sh 'docker push $ECR_NGINX_REPO:nginx-image-latest'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_NGINX_REPO:nginx-image-latest'
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m $ECR_NGINX_REPO:nginx-image-latest'
                     }
                 }
             }
