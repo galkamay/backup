@@ -25,8 +25,8 @@ pipeline {
                         sh 'docker tag django-app:latest $ECR_DJANGO_REPO'
                         sh 'docker push $ECR_DJANGO_REPO'
 
-                        // Scan the image with Trivy using the local database
-                        sh 'trivy image --severity HIGH,CRITICAL --offline --cache-dir /var/lib/trivy $ECR_DJANGO_REPO:latest'
+                        // Scan the image with Trivy using the local cache
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy $ECR_DJANGO_REPO:latest'
                     }
                 }
             }
@@ -49,8 +49,8 @@ pipeline {
                         sh 'docker tag nginx-app:latest $ECR_NGINX_REPO'
                         sh 'docker push $ECR_NGINX_REPO'
 
-                        // Scan the image with Trivy using the local database
-                        sh 'trivy image --severity HIGH,CRITICAL --offline --cache-dir /var/lib/trivy $ECR_NGINX_REPO:latest'
+                        // Scan the image with Trivy using the local cache
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy $ECR_NGINX_REPO:latest'
                     }
                 }
             }
