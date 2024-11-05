@@ -7,6 +7,9 @@ RUN mkdir -p /opt/status-page/statuspage/static/
 # Create the sites-enabled directory
 RUN mkdir -p /etc/nginx/sites-enabled
 
+# Set permissions for the directories
+RUN chmod -R 755 /opt/status-page/statuspage/static && chmod -R 755 /etc/nginx/sites-enabled
+
 # Copy custom Nginx configuration file to the container
 COPY ./status-page.conf /etc/nginx/sites-available/status-page.conf
 
