@@ -36,8 +36,12 @@ pipeline {
         stage('Deployment Validation') {
             steps {
                 script {
-                    sh "kubectl rollout status deployment/gal-alon-wsgi-deployment -n $KUBERNETES_NAMESPACE"
-                    sh "kubectl rollout status deployment/gal-alon-nginx-deployment -n $KUBERNETES_NAMESPACE"
+                    // הוספת האישורים עבור השלב הנוכחי
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                        sh 'aws eks --region $AWS_REGION update-kubeconfig --name gal-alon-eks-cluster-ga'
+                        sh "kubectl rollout status deployment/gal-alon-wsgi-deployment -n $KUBERNETES_NAMESPACE"
+                        sh "kubectl rollout status deployment/gal-alon-nginx-deployment -n $KUBERNETES_NAMESPACE"
+                    }
                 }
             }
         }
