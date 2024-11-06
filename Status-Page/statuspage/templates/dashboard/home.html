@@ -22,7 +22,7 @@ Dashboard
                 <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ open_incidents }}</p>
                 <div class="absolute inset-x-0 bottom-0 bg-gray-50 dark:bg-zinc-900 px-4 py-4 sm:px-6">
                     <div class="text-sm">
-                        <a href="{% url 'incidents:incident_list' %}" class="font-medium text-indigo-600 hover:text-indigo-500"> View all<span class="sr-only"> Total Open Incidents</span></a>
+                        <a href="{% url 'incidents:incident_list' %}" class="font-medium text-red-600 hover:text-red-500"> View all<span class="sr-only"> Total Open Incidents</span></a>
                     </div>
                 </div>
             </dd>
@@ -45,7 +45,7 @@ Dashboard
                 <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ open_maintenances }}</p>
                 <div class="absolute inset-x-0 bottom-0 bg-gray-50 dark:bg-zinc-900 px-4 py-4 sm:px-6">
                     <div class="text-sm">
-                        <a href="{% url 'maintenances:maintenance_list' %}" class="font-medium text-indigo-600 hover:text-indigo-500"> View all<span class="sr-only"> Total Open Maintenances</span></a>
+                        <a href="{% url 'maintenances:maintenance_list' %}" class="font-medium text-red-600 hover:text-red-500"> View all<span class="sr-only"> Total Open Maintenances</span></a>
                     </div>
                 </div>
             </dd>
@@ -67,7 +67,7 @@ Dashboard
                 <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ upcoming_maintenances }}</p>
                 <div class="absolute inset-x-0 bottom-0 bg-gray-50 dark:bg-zinc-900 px-4 py-4 sm:px-6">
                     <div class="text-sm">
-                        <a href="{% url 'maintenances:maintenance_list' %}" class="font-medium text-indigo-600 hover:text-indigo-500"> View all<span class="sr-only"> Total Upcoming Maintenances</span></a>
+                        <a href="{% url 'maintenances:maintenance_list' %}" class="font-medium text-red-600 hover:text-red-500"> View all<span class="sr-only"> Total Upcoming Maintenances</span></a>
                     </div>
                 </div>
             </dd>
