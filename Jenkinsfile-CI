@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     // Run Trivy vulnerability scan on the Django image before pushing to ECR
-                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m django-app:$IMAGE_VERSION'
+                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m django-app:$IMAGE_VERSION'
                 }
             }
         }
@@ -62,7 +62,7 @@ pipeline {
             steps {
                 script {
                     // Run Trivy vulnerability scan on the Nginx image before pushing to ECR
-                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m nginx-app:$IMAGE_VERSION'
+                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m nginx-app:$IMAGE_VERSION'
                 }
             }
         }
