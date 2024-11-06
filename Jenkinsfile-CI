@@ -2,10 +2,12 @@ pipeline {
     agent { label 'docker' }
     environment {
         AWS_REGION = 'us-east-1'
-        ECR_DJANGO_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga'
-        ECR_NGINX_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga'
+        ECR_DJANGO_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:django-image-latest'
+        ECR_NGINX_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:nginx-image-latest'
         AWS_CREDENTIALS_ID = 'aws-access-key-jenkins'
-        IMAGE_VERSION = "${env.BUILD_NUMBER}-${env.BUILD_ID}" // Use Jenkins build number for versioning
+        DEPLOY_REPO_URL = 'https://github.com/galkamay/DevOps_Project-argoCD.git'
+        DEPLOY_REPO_DIR = 'deploy-repo'
+        IMAGE_VERSION = "${env.BUILD_NUMBER}-${env.BUILD_ID}"
     }
 
     stages {
@@ -16,9 +18,9 @@ pipeline {
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_DJANGO_REPO'
                         sh 'cp ./Docker-Files/Dockerfile-django ./Status-Page/Dockerfile'
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t django-app:$IMAGE_VERSION .'
-                        sh 'docker tag django-app:$IMAGE_VERSION $ECR_DJANGO_REPO:django-image-latest'
-                        sh 'docker push $ECR_DJANGO_REPO:django-image-latest'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m $ECR_DJANGO_REPO:django-image-latest'
+                        sh 'docker tag django-app:$IMAGE_VERSION $ECR_DJANGO_REPO'
+                        sh 'docker push $ECR_DJANGO_REPO'
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_DJANGO_REPO:$IMAGE_VERSION'
                     }
                 }
             }
@@ -31,9 +33,39 @@ pipeline {
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_NGINX_REPO'
                         sh 'cp ./Docker-Files/Dockerfile-nginx ./Status-Page/Dockerfile'
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t nginx-app:$IMAGE_VERSION .'
-                        sh 'docker tag nginx-app:$IMAGE_VERSION $ECR_NGINX_REPO:nginx-image-latest'
-                        sh 'docker push $ECR_NGINX_REPO:nginx-image-latest'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 10m $ECR_NGINX_REPO:nginx-image-latest'
+                        sh 'docker tag nginx-app:$IMAGE_VERSION $ECR_NGINX_REPO'
+                        sh 'docker push $ECR_NGINX_REPO'
+                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_NGINX_REPO:$IMAGE_VERSION'
+                    }
+                }
+            }
+        }
+
+        stage('Update Deployment Repo') {
+            steps {
+                script {
+                    sh 'git clone $DEPLOY_REPO_URL $DEPLOY_REPO_DIR'
+                    dir("$DEPLOY_REPO_DIR/templates") {
+                        sh '''
+                        for file in *.yaml; do
+                            if [ -f "$file" ]; then
+                                sed -i "s|image: $ECR_DJANGO_REPO:.*|image: $ECR_DJANGO_REPO:$IMAGE_VERSION|" "$file"
+                                sed -i "s|image: $ECR_NGINX_REPO:.*|image: $ECR_NGINX_REPO:$IMAGE_VERSION|" "$file"
+                            fi
+                        done
+                        '''
+                        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN'), 
+                                         string(credentialsId: 'git-email', variable: 'GIT_EMAIL'), 
+                                         string(credentialsId: 'git-username', variable: 'GIT_USERNAME')]) {
+                            sh '''
+                            git config --global user.email "$GIT_EMAIL"
+                            git config --global user.name "$GIT_USERNAME"
+                            git remote set-url origin https://$GITHUB_TOKEN@github.com/galkamay/DevOps_Project-argoCD.git
+                            git add .
+                            git commit -m "Update image to version $IMAGE_VERSION"
+                            git push origin main
+                            '''
+                        }
                     }
                 }
             }
@@ -56,6 +88,18 @@ pipeline {
     }
 
     post {
+        always {
+            script {
+                sh '''
+                    if [ -d "$DEPLOY_REPO_DIR" ]; then
+                        rm -rf $DEPLOY_REPO_DIR
+                        echo "Removed cloned repository: $DEPLOY_REPO_DIR"
+                    else
+                        echo "No repository to remove"
+                    fi
+                '''
+            }
+        }
         success {
             echo 'CI pipeline completed successfully!'
         }
