@@ -8,7 +8,7 @@ django-mptt==0.16.0
 django-otp-yubikey==1.1.0
 django-otp==1.5.0
 django-redis==5.4.0
-django-rq==2.10.2
+django-rq==2.5.1
 django-tables2==2.7.0
 Django==4.2.15
 django-browser-reload==1.12.1
@@ -22,7 +22,7 @@ netaddr==1.2.1
 phonenumbers==8.13.37
 psycopg2==2.9.9
 pysvg-py3==0.2.2.post3
-rq-scheduler==0.13.1
+rq-scheduler==0.10.0
 segno==1.6.1
 swagger-spec-validator==3.0.3
 typing_extensions==4.11.0
