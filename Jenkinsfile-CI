@@ -2,40 +2,78 @@ pipeline {
     agent { label 'docker' }
     environment {
         AWS_REGION = 'us-east-1'
-        ECR_DJANGO_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:django-image-latest'
-        ECR_NGINX_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga:nginx-image-latest'
+        ECR_DJANGO_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga'
+        ECR_NGINX_REPO = '992382545251.dkr.ecr.us-east-1.amazonaws.com/gal-alon-app-repo-ga'
         AWS_CREDENTIALS_ID = 'aws-access-key-jenkins'
         DEPLOY_REPO_URL = 'https://github.com/galkamay/DevOps_Project-argoCD.git'
         DEPLOY_REPO_DIR = 'deploy-repo'
-        IMAGE_VERSION = "${env.BUILD_NUMBER}-${env.BUILD_ID}"
+        IMAGE_VERSION = "${env.BUILD_NUMBER}-${env.BUILD_ID}"  // Unique version per build
     }
 
     stages {
-        stage('Build and Scan Django Image') {
+        stage('Build Django Image') {
             steps {
                 script {
+                    // Login to ECR and build the Django Docker image with a unique tag
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_DJANGO_REPO'
                         sh 'cp ./Docker-Files/Dockerfile-django ./Status-Page/Dockerfile'
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t django-app:$IMAGE_VERSION .'
-                        sh 'docker tag django-app:$IMAGE_VERSION $ECR_DJANGO_REPO'
-                        sh 'docker push $ECR_DJANGO_REPO'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_DJANGO_REPO:$IMAGE_VERSION'
                     }
                 }
             }
         }
 
-        stage('Build and Scan Nginx Image') {
+        stage('Scan Django Image') {
             steps {
                 script {
+                    // Run Trivy vulnerability scan on the Django image before pushing to ECR
+                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m django-app:$IMAGE_VERSION'
+                }
+            }
+        }
+
+        stage('Push Django Image to ECR') {
+            steps {
+                script {
+                    // Tag and push the scanned Django image to ECR with the build version
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                        sh 'docker tag django-app:$IMAGE_VERSION $ECR_DJANGO_REPO:django-image-$IMAGE_VERSION'
+                        sh 'docker push $ECR_DJANGO_REPO:django-image-$IMAGE_VERSION'
+                    }
+                }
+            }
+        }
+
+        stage('Build Nginx Image') {
+            steps {
+                script {
+                    // Login to ECR and build the Nginx Docker image with a unique tag
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_NGINX_REPO'
                         sh 'cp ./Docker-Files/Dockerfile-nginx ./Status-Page/Dockerfile'
                         sh 'cd ./Status-Page && docker build --platform linux/amd64 -t nginx-app:$IMAGE_VERSION .'
-                        sh 'docker tag nginx-app:$IMAGE_VERSION $ECR_NGINX_REPO'
-                        sh 'docker push $ECR_NGINX_REPO'
-                        sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m $ECR_NGINX_REPO:$IMAGE_VERSION'
+                    }
+                }
+            }
+        }
+
+        stage('Scan Nginx Image') {
+            steps {
+                script {
+                    // Run Trivy vulnerability scan on the Nginx image before pushing to ECR
+                    sh 'trivy image --severity HIGH,CRITICAL --cache-dir /var/lib/trivy --timeout 5m nginx-app:$IMAGE_VERSION'
+                }
+            }
+        }
+
+        stage('Push Nginx Image to ECR') {
+            steps {
+                script {
+                    // Tag and push the scanned Nginx image to ECR with the build version
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                        sh 'docker tag nginx-app:$IMAGE_VERSION $ECR_NGINX_REPO:nginx-image-$IMAGE_VERSION'
+                        sh 'docker push $ECR_NGINX_REPO:nginx-image-$IMAGE_VERSION'
                     }
                 }
             }
@@ -44,16 +82,25 @@ pipeline {
         stage('Update Deployment Repo') {
             steps {
                 script {
+                    // Clone the deployment repository to update deployment files with new image versions
                     sh 'git clone $DEPLOY_REPO_URL $DEPLOY_REPO_DIR'
-                    dir("$DEPLOY_REPO_DIR/templates") {
-                        sh '''
-                        for file in *.yaml; do
-                            if [ -f "$file" ]; then
-                                sed -i "s|image: $ECR_DJANGO_REPO:.*|image: $ECR_DJANGO_REPO:$IMAGE_VERSION|" "$file"
-                                sed -i "s|image: $ECR_NGINX_REPO:.*|image: $ECR_NGINX_REPO:$IMAGE_VERSION|" "$file"
-                            fi
-                        done
-                        '''
+                    dir("$DEPLOY_REPO_DIR") {
+                        // Update imageVersion in values.yaml to reflect the current build version
+                        sh 'sed -i "s|imageVersion:.*|imageVersion: \\"$IMAGE_VERSION\\"|" values.yaml'
+
+                        // Update deployment YAML files in the templates directory with the new image tags
+                        dir("templates") {
+                            sh '''
+                            for file in *.yaml; do
+                                if [ -f "$file" ]; then
+                                    sed -i "s|image: $ECR_DJANGO_REPO:django-image-.*|image: $ECR_DJANGO_REPO:django-image-$IMAGE_VERSION|" "$file"
+                                    sed -i "s|image: $ECR_NGINX_REPO:nginx-image-.*|image: $ECR_NGINX_REPO:nginx-image-$IMAGE_VERSION|" "$file"
+                                fi
+                            done
+                            '''
+                        }
+
+                        // Commit and push the updated files to the deployment repository
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN'), 
                                          string(credentialsId: 'git-email', variable: 'GIT_EMAIL'), 
                                          string(credentialsId: 'git-username', variable: 'GIT_USERNAME')]) {
@@ -74,6 +121,7 @@ pipeline {
         stage('Remove All Docker Images') {
             steps {
                 script {
+                    // Remove all Docker images after processing to save space
                     sh '''
                         images=$(docker images -q)
                         if [ -n "$images" ]; then
@@ -90,6 +138,7 @@ pipeline {
     post {
         always {
             script {
+                // Clean up cloned repository directory after completion
                 sh '''
                     if [ -d "$DEPLOY_REPO_DIR" ]; then
                         rm -rf $DEPLOY_REPO_DIR
